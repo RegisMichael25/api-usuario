@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Usuários</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+</head>
+<body>
+<h1>Lista de Usuários</h1>
+
+<div id="message"></div>
+
+<button onclick="loadUsers()" id="refreshBtn">Atualizar Lista</button>
+<button onclick="window.location.href='user-form.html'" id="addUserBtn">Adicionar Usuário</button>
+
+<br><br>
+
+<div id="loading" style="display: none;">Carregando usuários...</div>
+
+<div id="userCount"></div>
+
+<table border="1" id="usersTable" style="width: 100%; border-collapse: collapse;">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nome Completo</th>
+        <th>E-mail</th>
+        <th>Data de Nascimento</th>
+        <th>Telefone</th>
+        <th>Endereço</th>
+        <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody id="usersTableBody">
+    <!-- Os usuários serão inseridos aqui dinamicamente -->
+    </tbody>
+</table>
+
+<div id="noUsers" style="display: none; text-align: center; margin-top: 20px;">
+    <p>Nenhum usuário encontrado.</p>
+    <button onclick="window.location.href='user-form.html'">Cadastrar Primeiro Usuário</button>
+</div>
+
+<script>
+    const messageDiv = document.getElementById('message');
+    const loadingDiv = document.getElementById('loading');
+    const usersTableBody = document.getElementById('usersTableBody');
+    const usersTable = document.getElementById('usersTable');
+    const noUsersDiv = document.getElementById('noUsers');
+    const userCountDiv = document.getElementById('userCount');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    // Função para carregar usuários
+    async function loadUsers() {
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = 'Carregando...';
+        loadingDiv.style.display = 'block';
+        messageDiv.innerHTML = '';
+
+        try {
+            const response = await axios.get('http://localhost:8080/user/list', {
+                timeout: 10000
+            });
+
+            const users = response.data;
+            displayUsers(users);
+
+        } catch (error) {
+            let errorMessage = 'Erro ao carregar usuários.';
+
+            if (error.response) {
+                errorMessage = `Erro: ${error.response.status} - ${error.response.data.message || error.response.statusText}`;
+            } else if (error.request) {
+                errorMessage = 'Erro de conexão. Verifique se o servidor está rodando.';
+            } else {
+                errorMessage = `Erro: ${error.message}`;
+            }
+
+            messageDiv.innerHTML = `<p style="color: red;">${errorMessage}</p>`;
+            hideTable();
+
+        } finally {
+            loadingDiv.style.display = 'none';
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = 'Atualizar Lista';
+        }
+    }
+
+    // Função para exibir usuários na tabela
+    function displayUsers(users) {
+        if (users.length === 0) {
+            hideTable();
+            noUsersDiv.style.display = 'block';
+            userCountDiv.innerHTML = '';
+            return;
+        }
+
+        noUsersDiv.style.display = 'none';
+        usersTable.style.display = 'table';
+        userCountDiv.innerHTML = `<p><strong>Total de usuários: ${users.length}</strong></p>`;
+
+        usersTableBody.innerHTML = '';
+
+        users.forEach(user => {
+            const row = document.createElement('tr');
+
+            // Formatar data de nascimento
+            let formattedDate = '-';
+            if (user.dateOfBirth) {
+                const date = new Date(user.dateOfBirth);
+                formattedDate = date.toLocaleDateString('pt-BR');
+            }
+
+            row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.fullName || '-'}</td>
+                    <td>${user.email || '-'}</td>
+                    <td>${formattedDate}</td>
+                    <td>${user.telephoneNumber || '-'}</td>
+                    <td>${user.address || '-'}</td>
+                    <td>
+                        <button onclick="editUser(${user.id})" style="margin-right: 5px;">Editar</button>
+                        <button onclick="deleteUser(${user.id}, '${user.fullName}')" style="color: red;">Excluir</button>
+                    </td>
+                `;
+
+            usersTableBody.appendChild(row);
+        });
+    }
+
+    // Função para ocultar a tabela
+    function hideTable() {
+        usersTable.style.display = 'none';
+        userCountDiv.innerHTML = '';
+    }
+
+    // Função para editar usuário (placeholder)
+    function editUser(userId) {
+        alert(`Funcionalidade de edição para usuário ID ${userId} ainda não implementada.`);
+        // Aqui você pode redirecionar para uma página de edição
+        // window.location.href = `edit-user.html?id=${userId}`;
+    }
+
+    // Função para excluir usuário
+    async function deleteUser(userId, userName) {
+        if (!confirm(`Tem certeza que deseja excluir o usuário "${userName}"?`)) {
+            return;
+        }
+
+        try {
+            await axios.delete(`http://localhost:8080/users/${userId}`, {
+                timeout: 10000
+            });
+
+            messageDiv.innerHTML = '<p style="color: green;">Usuário excluído com sucesso!</p>';
+            loadUsers(); // Recarrega a lista
+
+        } catch (error) {
+            let errorMessage = 'Erro ao excluir usuário.';
+
+            if (error.response) {
+                errorMessage = `Erro: ${error.response.status} - ${error.response.data.message || error.response.statusText}`;
+            } else if (error.request) {
+                errorMessage = 'Erro de conexão. Verifique se o servidor está rodando.';
+            } else {
+                errorMessage = `Erro: ${error.message}`;
+            }
+
+            messageDiv.innerHTML = `<p style="color: red;">${errorMessage}</p>`;
+        }
+    }
+
+    // Carregar usuários quando a página carregar
+    window.addEventListener('load', function() {
+        loadUsers();
+    });
+</script>
+</body>
+</html>
