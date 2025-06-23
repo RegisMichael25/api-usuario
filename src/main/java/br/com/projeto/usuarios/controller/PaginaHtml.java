@@ -11,9 +11,9 @@ public class PaginaHtml {
         return "user-form";
     }
 
-    @GetMapping("/user/search-by-name")
+    @GetMapping("/user/search-by")
     public String pageSearch(){
-        return "search-by-name";
+        return "search";
     }
 
     @GetMapping("/user/list-all")
