@@ -2,9 +2,10 @@ package br.com.projeto.usuarios.controller;
 
 import br.com.projeto.usuarios.controller.request.UserRequest;
 import br.com.projeto.usuarios.controller.response.UserResponse;
-import br.com.projeto.usuarios.model.User;
+import br.com.projeto.usuarios.model.Users;
 import br.com.projeto.usuarios.service.UserService;
 import lombok.Data;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,29 +29,30 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private ModelMapper mapper;
+
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-
+    public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest request) {
         try{
-            System.out.println(user.getFullName());
-            System.out.println(user.getEmail());
-            System.out.println(user.getAddress());
-            System.out.println(user.getTelephoneNumber());
-            System.out.println(user.getDateOfBirth());
-
-            userService.save(user);
-
-            return new ResponseEntity<>(user, HttpStatus.CREATED);
+            return new ResponseEntity<>( convertToResponse( userService.create( convertToEntity(request) ) ), HttpStatus.CREATED);
         }catch (Exception e) { return new ResponseEntity<>(HttpStatus.BAD_REQUEST); }
 
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<User>> listAllUsers() { return new ResponseEntity<>(userService.findAll(), HttpStatus.OK); }
+    public ResponseEntity<List<UserResponse>> listAllUsers() {
+        List<UserResponse> list = userService.findAll().stream().map(this::convertToResponse).toList();
+        return new ResponseEntity<>(list, HttpStatus.OK);
+    }
 
-    @GetMapping("/search-by-id/id/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) { return new ResponseEntity<>(userService.findById(id), HttpStatus.OK); }
+    @GetMapping("/search-by/id/{id}")
+    public ResponseEntity<Users> getUserById(@PathVariable Long id) { return new ResponseEntity<>(userService.findById(id), HttpStatus.OK); }
 
-    @GetMapping( "/search-by-id/name/{name}")
-    public ResponseEntity<List<User>> findByName(@PathVariable String name) { return new ResponseEntity<>(userService.findByName(name), HttpStatus.OK); }
+    @GetMapping( "/search-by/name/{name}")
+    public ResponseEntity<List<Users>> findByName(@PathVariable String name) { return new ResponseEntity<>(userService.findByName(name), HttpStatus.OK); }
+
+    public Users convertToEntity(UserRequest request) { return mapper.map(request, Users.class); }
+
+    public UserResponse convertToResponse(Users User) { return mapper.map(User, UserResponse.class); }
 }
