@@ -1,5 +1,5 @@
 ALTER TABLE `user_login`
-    MODIFY COLUMN `id` BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL;
+    MODIFY COLUMN `id` BIGINT AUTO_INCREMENT NOT NULL;
 
 -- Adiciona nova coluna `nome`
 ALTER TABLE `user_login`
